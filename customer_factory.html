@@ -16,27 +16,42 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
-            background: #f8f9fa;
+            background: transparent;
+        }
+
+        .wrapper {
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            padding: 20px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .date-header {
+            text-align: center;
+            margin-bottom: 8px;
+            display: none;
+        }
+
+        .date-label {
+            font-size: 13px;
+            color: #6c757d;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+
+        .date-value {
+            font-size: 14px;
+            color: #212529;
+            font-weight: 700;
         }
         
         .diagram-container {
             width: 100%;
-            max-width: 1400px;
-            height: 400px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
-            overflow: hidden;
         }
 
         .loading-overlay {
@@ -59,16 +74,14 @@
         }
 
         .error-message {
-            width: 100%;
-            max-width: 1400px;
+            text-align: center;
+            color: #856404;
             background: #fff3cd;
             border: 1px solid #ffc107;
-            color: #856404;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 13px;
-            margin-top: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-top: 8px;
             display: none;
         }
 
@@ -82,7 +95,7 @@
 
         svg {
             width: 100%;
-            height: 100%;
+            height: auto;
         }
 
         .node-box {
@@ -140,12 +153,18 @@
     </style>
 </head>
 <body>
-    <div class="diagram-container" id="diagram-container">
-        <div class="loading-overlay" id="loading-overlay">
-            <div class="loading">데이터 로딩 중...</div>
+    <div class="wrapper">
+        <div class="date-header" id="date-header">
+            <span class="date-label">기준일:</span>
+            <span class="date-value" id="date-value">-</span>
         </div>
+        <div class="diagram-container" id="diagram-container">
+            <div class="loading-overlay" id="loading-overlay">
+                <div class="loading">데이터 로딩 중...</div>
+            </div>
+        </div>
+        <div class="error-message" id="error-message"></div>
     </div>
-    <div class="error-message" id="error-message"></div>
 
     <script>
         // 하드코딩된 설정값
@@ -204,6 +223,7 @@
                 console.log('🗺️ 매핑된 데이터:', dataMap);
 
                 // 필요한 값들 추출 - 문자열을 숫자로 변환
+                const 날짜 = dataMap['날짜'] || '-';
                 const 현재고객 = parseInt(dataMap['현재고객']) || 0;
                 const 월간이탈 = parseInt(dataMap['월간이탈']) || 0;
                 const 추천 = parseInt(dataMap['추천']) || 0;
@@ -213,8 +233,12 @@
                 const 관심고객 = parseInt(dataMap['관심고객']) || 0;
                 
                 console.log('🔢 파싱된 숫자:', {
-                    현재고객, 월간이탈, 추천, 신규고객, 활성고객, 월방문자, 관심고객
+                    날짜, 현재고객, 월간이탈, 추천, 신규고객, 활성고객, 월방문자, 관심고객
                 });
+
+                // 날짜 표시
+                document.getElementById('date-value').textContent = 날짜;
+                document.getElementById('date-header').style.display = 'block';
 
                 // 계산된 비율
                 const 이탈율 = 현재고객 > 0 ? ((월간이탈 / 현재고객) * 100).toFixed(1) : '0.0';
@@ -256,7 +280,7 @@
                 
                 // 에러 메시지 하단 표시
                 const errorEl = document.getElementById('error-message');
-                errorEl.innerHTML = `<strong>⚠️ 데이터 로드 실패:</strong> ${error.message}. 브라우저 콘솔(F12)을 확인하세요.`;
+                errorEl.innerHTML = `<strong>⚠️ 데이터 로드 실패:</strong> ${error.message}`;
                 errorEl.classList.add('show');
             }
         }
@@ -267,7 +291,7 @@
             const container = document.getElementById('diagram-container');
             
             const svg = `
-<svg viewBox="0 0 1400 400" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 1070 400" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
     <defs>
         <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
             <polygon points="0 0, 10 3, 0 6" fill="#6c757d" />
@@ -342,19 +366,19 @@
     <text x="640" y="285" class="node-text-title">관심 고객</text>
     <text x="640" y="315" class="node-text-value">${data.관심고객}명</text>
     
-    <!-- 피드백 루프들 (곡선 화살표) -->
+    <!-- 피드백 루프들 (곡선 화살표) - 방향 수정 -->
     
-    <!-- 이탈 → 솔루션 곡선 화살표 -->
-    <path d="M 320 100 Q 320 185 385 265" class="arrow-curved"/>
-    <text x="280" y="170" class="rate-label">이탈 ${data.이탈율}%</text>
+    <!-- 솔루션 → 월간 이탈 (수정됨) -->
+    <path d="M 385 265 Q 320 185 320 100" class="arrow-curved"/>
+    <text x="340" y="170" class="rate-label">이탈 ${data.이탈율}%</text>
     
-    <!-- 추천 → 솔루션 곡선 화살표 -->
-    <path d="M 535 100 Q 460 185 385 265" class="arrow-curved"/>
-    <text x="490" y="170" class="rate-label">추천 ${data.추천율}%</text>
+    <!-- 솔루션 → 추천 (수정됨) -->
+    <path d="M 385 265 Q 460 185 535 100" class="arrow-curved"/>
+    <text x="450" y="170" class="rate-label">추천 ${data.추천율}%</text>
     
-    <!-- 신규 고객 → 관심 고객 곡선 화살표 -->
-    <path d="M 750 100 Q 750 180 640 260" class="arrow-curved"/>
-    <text x="770" y="170" class="rate-label">전환 ${data.전환율}%</text>
+    <!-- 관심 고객 → 신규 고객 (수정됨) -->
+    <path d="M 640 260 Q 750 180 750 100" class="arrow-curved"/>
+    <text x="720" y="170" class="rate-label">전환 ${data.전환율}%</text>
     
     <!-- 관심 고객 → 솔루션 곡선 화살표 (유지) -->
     <path d="M 565 295 Q 507 295 450 295" class="arrow-curved"/>
