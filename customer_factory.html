@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고객 공장 시각화 도구</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 0;
+        }
+        
+        .input-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-right: 1px solid #e9ecef;
+        }
+        
+        .stage-input {
+            margin-bottom: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .stage-input label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .stage-input input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .stage-input input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .conversion-rate {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .conversion-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        
+        .diagram-section {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #mermaid-diagram {
+            width: 100%;
+            min-height: 600px;
+        }
+        
+        .stage-emoji {
+            font-size: 18px;
+            margin-right: 8px;
+        }
+        
+        .metrics-summary {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .metrics-summary h3 {
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f3f5;
+            font-size: 13px;
+        }
+        
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            color: #6c757d;
+        }
+        
+        .metric-value {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        @media (max-width: 968px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-section {
+                border-right: none;
+                border-bottom: 1px solid #e9ecef;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏭 고객 공장 시각화 도구</h1>
+            <p>각 단계별 수치를 입력하면 전환율이 자동 계산되고 흐름이 시각화됩니다</p>
+        </div>
+        
+        <div class="content">
+            <div class="input-section">
+                <div class="stage-input">
+                    <label><span class="stage-emoji">🎯</span>획득 (Acquisition)</label>
+                    <input type="number" id="acquisition" value="100" min="0" placeholder="방문자 수">
+                    <div class="conversion-rate">
+                        <span>시작 단계</span>
+                    </div>
+                </div>
+                
+                <div class="stage-input">
+                    <label><span class="stage-emoji">✅</span>활성화 (Activation)</label>
+                    <input type="number" id="activation" value="45" min="0" placeholder="데모 플레이 완료">
+                    <div class="conversion-rate">
+                        전환율: <span class="conversion-badge" id="conv-activation">0%</span>
+                    </div>
+                </div>
+                
+                <div class="stage-input">
+                    <label><span class="stage-emoji">🔄</span>유지 (Retention)</label>
+                    <input type="number" id="retention" value="12" min="0" placeholder="재방문자">
+                    <div class="conversion-rate">
+                        전환율: <span class="conversion-badge" id="conv-retention">0%</span>
+                    </div>
+                </div>
+                
+                <div class="stage-input">
+                    <label><span class="stage-emoji">💰</span>수익 (Revenue)</label>
+                    <input type="number" id="revenue" value="5" min="0" placeholder="구독 결제">
+                    <div class="conversion-rate">
+                        전환율: <span class="conversion-badge" id="conv-revenue">0%</span>
+                    </div>
+                </div>
+                
+                <div class="stage-input">
+                    <label><span class="stage-emoji">📢</span>추천 (Referral)</label>
+                    <input type="number" id="referral" value="2" min="0" placeholder="초대 완료">
+                    <div class="conversion-rate">
+                        전환율: <span class="conversion-badge" id="conv-referral">0%</span>
+                    </div>
+                </div>
+                
+                <div class="metrics-summary">
+                    <h3>📊 핵심 지표</h3>
+                    <div class="metric-row">
+                        <span class="metric-label">전체 전환율</span>
+                        <span class="metric-value" id="overall-conversion">0%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">최대 이탈 구간</span>
+                        <span class="metric-value" id="biggest-drop">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="diagram-section">
+                <div id="mermaid-diagram"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: false,
+            theme: 'default',
+            flowchart: {
+                htmlLabels: true,
+                curve: 'basis',
+                padding: 20
+            }
+        });
+
+        function calculateConversionRate(current, previous) {
+            if (previous === 0) return 0;
+            return Math.round((current / previous) * 100);
+        }
+
+        function updateDiagram() {
+            const acquisition = parseInt(document.getElementById('acquisition').value) || 0;
+            const activation = parseInt(document.getElementById('activation').value) || 0;
+            const retention = parseInt(document.getElementById('retention').value) || 0;
+            const revenue = parseInt(document.getElementById('revenue').value) || 0;
+            const referral = parseInt(document.getElementById('referral').value) || 0;
+
+            // 전환율 계산
+            const convActivation = calculateConversionRate(activation, acquisition);
+            const convRetention = calculateConversionRate(retention, activation);
+            const convRevenue = calculateConversionRate(revenue, retention);
+            const convReferral = calculateConversionRate(referral, revenue);
+            const overallConv = calculateConversionRate(revenue, acquisition);
+
+            // UI 업데이트
+            document.getElementById('conv-activation').textContent = `${convActivation}%`;
+            document.getElementById('conv-retention').textContent = `${convRetention}%`;
+            document.getElementById('conv-revenue').textContent = `${convRevenue}%`;
+            document.getElementById('conv-referral').textContent = `${convReferral}%`;
+            document.getElementById('overall-conversion').textContent = `${overallConv}%`;
+
+            // 최대 이탈 구간 찾기
+            const drops = [
+                { stage: '획득→활성화', rate: convActivation },
+                { stage: '활성화→유지', rate: convRetention },
+                { stage: '유지→수익', rate: convRevenue },
+                { stage: '수익→추천', rate: convReferral }
+            ];
+            const lowestDrop = drops.reduce((min, curr) => curr.rate < min.rate ? curr : min);
+            document.getElementById('biggest-drop').textContent = `${lowestDrop.stage} (${lowestDrop.rate}%)`;
+
+            // Mermaid 다이어그램 생성
+            const mermaidCode = `
+graph TD
+    A["🎯 획득<br/><b>${acquisition}명</b><br/><small>시작 단계</small>"]
+    B["✅ 활성화<br/><b>${activation}명</b><br/><small>전환율: ${convActivation}%</small>"]
+    C["🔄 유지<br/><b>${retention}명</b><br/><small>전환율: ${convRetention}%</small>"]
+    D["💰 수익<br/><b>${revenue}명</b><br/><small>전환율: ${convRevenue}%</small>"]
+    E["📢 추천<br/><b>${referral}명</b><br/><small>전환율: ${convReferral}%</small>"]
+    
+    A -->|"${convActivation}%"| B
+    B -->|"${convRetention}%"| C
+    C -->|"${convRevenue}%"| D
+    D -->|"${convReferral}%"| E
+    
+    style A fill:#667eea,stroke:#5a67d8,stroke-width:3px,color:#fff
+    style B fill:#48bb78,stroke:#38a169,stroke-width:3px,color:#fff
+    style C fill:#4299e1,stroke:#3182ce,stroke-width:3px,color:#fff
+    style D fill:#ed8936,stroke:#dd6b20,stroke-width:3px,color:#fff
+    style E fill:#9f7aea,stroke:#805ad5,stroke-width:3px,color:#fff
+`;
+
+            const diagramDiv = document.getElementById('mermaid-diagram');
+            diagramDiv.innerHTML = mermaidCode;
+            
+            mermaid.run({
+                nodes: [diagramDiv]
+            });
+        }
+
+        // 입력 필드에 이벤트 리스너 추가
+        ['acquisition', 'activation', 'retention', 'revenue', 'referral'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateDiagram);
+        });
+
+        // 초기 다이어그램 생성
+        updateDiagram();
+    </script>
+</body>
+</html>
