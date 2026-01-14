@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>고객 공장 다이어그램</title>
     <style>
         * {
@@ -170,6 +173,8 @@
                 const range = `${SHEET_NAME}!A:L`;
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
                 
+                console.log('📡 API 요청:', url);
+                
                 const response = await fetch(url);
                 
                 if (!response.ok) {
@@ -177,6 +182,7 @@
                 }
                 
                 const data = await response.json();
+                console.log('📥 받은 데이터:', data);
                 
                 if (!data.values || data.values.length < 2) {
                     throw new Error('데이터가 충분하지 않습니다 (최소 2행 필요)');
@@ -186,28 +192,39 @@
                 const row = data.values[1];
                 const headers = data.values[0];
                 
+                console.log('📋 헤더:', headers);
+                console.log('📊 데이터 행:', row);
+                
                 // 데이터 파싱 (헤더 기반)
                 const dataMap = {};
                 headers.forEach((header, idx) => {
                     dataMap[header] = row[idx] || '0';
                 });
 
-                // 필요한 값들 추출
-                const 현재고객 = parseInt(dataMap['현재고객'] || dataMap['현재_고객'] || '0') || 0;
-                const 월간이탈 = parseInt(dataMap['월간이탈'] || dataMap['월간_이탈'] || '0') || 0;
-                const 추천 = parseInt(dataMap['추천'] || '0') || 0;
-                const 신규고객 = parseInt(dataMap['신규고객'] || dataMap['신규_고객'] || '0') || 0;
-                const 활성고객 = parseInt(dataMap['활성고객'] || dataMap['활성_고객'] || '0') || 0;
-                const 월방문자 = parseInt(dataMap['월방문자'] || dataMap['월_방문자'] || '0') || 0;
-                const 관심고객 = parseInt(dataMap['관심고객'] || dataMap['관심_고객'] || '0') || 0;
+                console.log('🗺️ 매핑된 데이터:', dataMap);
+
+                // 필요한 값들 추출 - 문자열을 숫자로 변환
+                const 현재고객 = parseInt(dataMap['현재고객']) || 0;
+                const 월간이탈 = parseInt(dataMap['월간이탈']) || 0;
+                const 추천 = parseInt(dataMap['추천']) || 0;
+                const 신규고객 = parseInt(dataMap['신규고객']) || 0;
+                const 활성고객 = parseInt(dataMap['활성고객']) || 0;
+                const 월방문자 = parseInt(dataMap['월방문자']) || 0;
+                const 관심고객 = parseInt(dataMap['관심고객']) || 0;
                 
+                console.log('🔢 파싱된 숫자:', {
+                    현재고객, 월간이탈, 추천, 신규고객, 활성고객, 월방문자, 관심고객
+                });
+
                 // 계산된 비율
                 const 이탈율 = 현재고객 > 0 ? ((월간이탈 / 현재고객) * 100).toFixed(1) : '0.0';
                 const 추천율 = 신규고객 > 0 ? ((추천 / 신규고객) * 100).toFixed(0) : '0';
                 const 전환율 = 관심고객 > 0 ? ((신규고객 / 관심고객) * 100).toFixed(0) : '0';
                 const 활보율 = 월방문자 > 0 ? ((관심고객 / 월방문자) * 100).toFixed(0) : '0';
 
-                drawDiagram({
+                console.log('📈 계산된 비율:', { 이탈율, 추천율, 전환율, 활보율 });
+
+                const displayData = {
                     현재고객: 현재고객.toLocaleString(),
                     월간이탈: 월간이탈.toLocaleString(),
                     추천: 추천.toLocaleString(),
@@ -219,13 +236,17 @@
                     추천율,
                     전환율,
                     활보율
-                });
+                };
+
+                console.log('✅ 최종 표시 데이터:', displayData);
+
+                drawDiagram(displayData);
 
                 // 로딩 오버레이 제거
                 document.getElementById('loading-overlay').style.display = 'none';
                 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('❌ 오류 발생:', error);
                 
                 // 기본값으로 다이어그램 표시
                 drawDiagram(DEFAULT_DATA);
@@ -235,12 +256,14 @@
                 
                 // 에러 메시지 하단 표시
                 const errorEl = document.getElementById('error-message');
-                errorEl.innerHTML = `<strong>⚠️ 데이터 로드 실패:</strong> ${error.message}`;
+                errorEl.innerHTML = `<strong>⚠️ 데이터 로드 실패:</strong> ${error.message}. 브라우저 콘솔(F12)을 확인하세요.`;
                 errorEl.classList.add('show');
             }
         }
 
         function drawDiagram(data) {
+            console.log('🎨 다이어그램 그리기 시작:', data);
+            
             const container = document.getElementById('diagram-container');
             
             const svg = `
@@ -344,12 +367,17 @@
             if (existingSvg) {
                 existingSvg.outerHTML = svg;
             } else {
-                container.innerHTML = svg;
+                container.innerHTML = svg + container.innerHTML;
             }
+            
+            console.log('✅ 다이어그램 렌더링 완료');
         }
 
         // 페이지 로드 시 자동으로 데이터 불러오기
-        window.addEventListener('load', loadFromSheets);
+        window.addEventListener('load', () => {
+            console.log('🚀 페이지 로드 완료, 데이터 불러오기 시작');
+            loadFromSheets();
+        });
     </script>
 </body>
 </html>
