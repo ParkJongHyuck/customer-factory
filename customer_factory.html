@@ -16,7 +16,7 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
-            background: transparent;
+            background: white;
         }
 
         .wrapper {
@@ -146,7 +146,7 @@
         }
 
         .rate-label {
-            font-size: 11px;
+            font-size: 12pt;
             fill: #6c757d;
             text-anchor: middle;
         }
@@ -155,7 +155,7 @@
 <body>
     <div class="wrapper">
         <div class="date-header" id="date-header">
-            <span class="date-label">기준일:</span>
+            <span class="date-label">고객 공장:</span>
             <span class="date-value" id="date-value">-</span>
         </div>
         <div class="diagram-container" id="diagram-container">
@@ -350,8 +350,7 @@
     
     <!-- 화살표: 월 방문자 → 솔루션 -->
     <line x1="180" y1="295" x2="295" y2="295" class="arrow"/>
-    <text x="238" y="285" class="arrow-label">활보</text>
-    <text x="238" y="310" class="rate-label">${data.활보율}%</text>
+    <text x="238" y="285" class="rate-label">활보 ${data.활보율}%</text>
     
     <!-- 솔루션 (육각형) -->
     <polygon points="350,265 420,265 450,295 420,325 350,325 320,295" class="node-factory"/>
@@ -380,9 +379,9 @@
     <path d="M 640 260 Q 750 180 750 100" class="arrow-curved"/>
     <text x="720" y="170" class="rate-label">전환 ${data.전환율}%</text>
     
-    <!-- 관심 고객 → 솔루션 곡선 화살표 (유지) -->
+    <!-- 관심 고객 → 솔루션 곡선 화살표 (유지) - 텍스트 위치 수정 -->
     <path d="M 565 295 Q 507 295 450 295" class="arrow-curved"/>
-    <text x="507" y="350" class="rate-label">유지</text>
+    <text x="507" y="285" class="rate-label">유지</text>
 </svg>
             `;
             
