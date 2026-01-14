@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>고객 공장 시각화 도구 (Google Sheets 연동)</title>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <title>고객 공장 다이어그램</title>
     <style>
         * {
             margin: 0;
@@ -14,569 +13,343 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             min-height: 100vh;
             padding: 20px;
         }
         
-        .container {
+        .diagram-container {
+            width: 100%;
             max-width: 1400px;
-            margin: 0 auto;
+            height: 400px;
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
             overflow: hidden;
         }
-        
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-        
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
 
-        .config-section {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            padding: 20px;
-            margin: 20px;
-            border-radius: 8px;
-        }
-
-        .config-section h3 {
-            color: #856404;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-
-        .config-input {
-            margin-bottom: 10px;
-        }
-
-        .config-input label {
-            display: block;
-            font-size: 13px;
-            color: #856404;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-
-        .config-input input {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #ffc107;
-            border-radius: 6px;
-            font-size: 14px;
-            font-family: monospace;
-        }
-
-        .load-button {
-            background: #ffc107;
-            color: #000;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .load-button:hover {
-            background: #e0a800;
-        }
-
-        .load-button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        
-        .content {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 0;
-        }
-        
-        .input-section {
-            background: #f8f9fa;
-            padding: 30px;
-            border-right: 1px solid #e9ecef;
-        }
-        
-        .stage-input {
-            margin-bottom: 20px;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        
-        .stage-input label {
-            display: block;
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        
-        .stage-input input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 6px;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-        
-        .stage-input input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .conversion-rate {
-            margin-top: 8px;
-            font-size: 12px;
-            color: #6c757d;
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 8px;
-        }
-        
-        .conversion-badge {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
-        
-        .diagram-section {
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-        
-        #mermaid-diagram {
-            width: 100%;
-            min-height: 400px;
-        }
-        
-        .stage-emoji {
-            font-size: 18px;
-            margin-right: 8px;
-        }
-        
-        .metrics-summary {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        
-        .metrics-summary h3 {
-            font-size: 14px;
-            color: #495057;
-            margin-bottom: 12px;
-            font-weight: 600;
-        }
-        
-        .metric-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #f1f3f5;
-            font-size: 13px;
-        }
-        
-        .metric-row:last-child {
-            border-bottom: none;
-        }
-        
-        .metric-label {
-            color: #6c757d;
-        }
-        
-        .metric-value {
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .history-section {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .history-section h3 {
-            font-size: 16px;
-            color: #495057;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        .history-table th {
-            background: #f8f9fa;
-            padding: 10px;
-            text-align: left;
-            font-weight: 600;
-            color: #495057;
-            border-bottom: 2px solid #dee2e6;
-        }
-
-        .history-table td {
-            padding: 10px;
-            border-bottom: 1px solid #f1f3f5;
-        }
-
-        .history-table tr:hover {
-            background: #f8f9fa;
-        }
-
-        .trend-up {
-            color: #28a745;
-        }
-
-        .trend-down {
-            color: #dc3545;
-        }
-
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px;
-            border: 1px solid #f5c6cb;
-        }
-
-        .success-message {
-            background: #d4edda;
-            color: #155724;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px;
-            border: 1px solid #c3e6cb;
+            z-index: 10;
         }
 
         .loading {
             text-align: center;
-            padding: 20px;
             color: #6c757d;
+            font-size: 14px;
         }
-        
-        @media (max-width: 1200px) {
-            .content {
-                grid-template-columns: 1fr;
-            }
-            
-            .input-section {
-                border-right: none;
-                border-bottom: 1px solid #e9ecef;
-            }
+
+        .error-message {
+            width: 100%;
+            max-width: 1400px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-top: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .error-message strong {
+            font-weight: 600;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .node-box {
+            fill: white;
+            stroke: #6c757d;
+            stroke-width: 2;
+            rx: 20;
+        }
+
+        .node-factory {
+            fill: white;
+            stroke: #6c757d;
+            stroke-width: 2;
+        }
+
+        .node-text-title {
+            font-size: 14px;
+            font-weight: 600;
+            fill: #495057;
+            text-anchor: middle;
+        }
+
+        .node-text-value {
+            font-size: 16px;
+            font-weight: 700;
+            fill: #212529;
+            text-anchor: middle;
+        }
+
+        .arrow {
+            stroke: #6c757d;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .arrow-curved {
+            stroke: #6c757d;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .arrow-label {
+            font-size: 12px;
+            fill: #6c757d;
+            text-anchor: middle;
+        }
+
+        .rate-label {
+            font-size: 11px;
+            fill: #6c757d;
+            text-anchor: middle;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🏭 고객 공장 시각화 도구</h1>
-            <p>Google Sheets 연동 버전 - 과거 데이터 추적 가능</p>
-        </div>
-
-        <!-- 설정 섹션 -->
-        <div class="config-section" id="config-section">
-            <h3>⚙️ Google Sheets 연동 설정</h3>
-            <div class="config-input">
-                <label>Google Sheets ID:</label>
-                <input type="text" id="sheet-id" placeholder="스프레드시트 URL에서 /d/ 뒤의 ID를 붙여넣으세요">
-            </div>
-            <div class="config-input">
-                <label>API Key (읽기 전용):</label>
-                <input type="text" id="api-key" placeholder="Google Cloud에서 생성한 API 키를 붙여넣으세요">
-            </div>
-            <div class="config-input">
-                <label>시트 이름 (기본값: Sheet1):</label>
-                <input type="text" id="sheet-name" value="Sheet1">
-            </div>
-            <button class="load-button" onclick="loadFromSheets()">📊 데이터 불러오기</button>
-            <button class="load-button" onclick="saveConfig()">💾 설정 저장</button>
-        </div>
-
-        <div id="message-area"></div>
-        
-        <div class="content">
-            <div class="input-section">
-                <div class="stage-input">
-                    <label><span class="stage-emoji">🎯</span>획득 (Acquisition)</label>
-                    <input type="number" id="acquisition" value="100" min="0" placeholder="방문자 수">
-                    <div class="conversion-rate">
-                        <span>시작 단계</span>
-                    </div>
-                </div>
-                
-                <div class="stage-input">
-                    <label><span class="stage-emoji">✅</span>활성화 (Activation)</label>
-                    <input type="number" id="activation" value="45" min="0" placeholder="데모 플레이 완료">
-                    <div class="conversion-rate">
-                        전환율: <span class="conversion-badge" id="conv-activation">0%</span>
-                    </div>
-                </div>
-                
-                <div class="stage-input">
-                    <label><span class="stage-emoji">🔄</span>유지 (Retention)</label>
-                    <input type="number" id="retention" value="12" min="0" placeholder="재방문자">
-                    <div class="conversion-rate">
-                        전환율: <span class="conversion-badge" id="conv-retention">0%</span>
-                    </div>
-                </div>
-                
-                <div class="stage-input">
-                    <label><span class="stage-emoji">💰</span>수익 (Revenue)</label>
-                    <input type="number" id="revenue" value="5" min="0" placeholder="구독 결제">
-                    <div class="conversion-rate">
-                        전환율: <span class="conversion-badge" id="conv-revenue">0%</span>
-                    </div>
-                </div>
-                
-                <div class="stage-input">
-                    <label><span class="stage-emoji">📢</span>추천 (Referral)</label>
-                    <input type="number" id="referral" value="2" min="0" placeholder="초대 완료">
-                    <div class="conversion-rate">
-                        전환율: <span class="conversion-badge" id="conv-referral">0%</span>
-                    </div>
-                </div>
-                
-                <div class="metrics-summary">
-                    <h3>📊 핵심 지표</h3>
-                    <div class="metric-row">
-                        <span class="metric-label">전체 전환율</span>
-                        <span class="metric-value" id="overall-conversion">0%</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">최대 이탈 구간</span>
-                        <span class="metric-value" id="biggest-drop">-</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="diagram-section">
-                <div id="mermaid-diagram"></div>
-                
-                <div class="history-section" id="history-section" style="display: none;">
-                    <h3>📈 과거 데이터 히스토리</h3>
-                    <div id="history-content"></div>
-                </div>
-            </div>
+    <div class="diagram-container" id="diagram-container">
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loading">데이터 로딩 중...</div>
         </div>
     </div>
+    <div class="error-message" id="error-message"></div>
 
     <script>
-        mermaid.initialize({ 
-            startOnLoad: false,
-            theme: 'default',
-            flowchart: {
-                htmlLabels: true,
-                curve: 'basis',
-                padding: 20
-            }
-        });
+        // 하드코딩된 설정값
+        const SHEET_ID = '1Up0FHYHBlYzZhdDvcVBe9xHZWVxefUQNg5CRgXlzZbE';
+        const API_KEY = 'AIzaSyCtgQLWJiGP1c4GfY-gLXBnIZNZH71XMVc';
+        const SHEET_NAME = '2026';
 
-        // 설정 저장/불러오기
-        function saveConfig() {
-            const config = {
-                sheetId: document.getElementById('sheet-id').value,
-                apiKey: document.getElementById('api-key').value,
-                sheetName: document.getElementById('sheet-name').value
-            };
-            localStorage.setItem('sheetsConfig', JSON.stringify(config));
-            showMessage('설정이 저장되었습니다!', 'success');
-        }
-
-        function loadConfig() {
-            const saved = localStorage.getItem('sheetsConfig');
-            if (saved) {
-                const config = JSON.parse(saved);
-                document.getElementById('sheet-id').value = config.sheetId || '';
-                document.getElementById('api-key').value = config.apiKey || '';
-                document.getElementById('sheet-name').value = config.sheetName || 'Sheet1';
-            }
-        }
-
-        function showMessage(text, type) {
-            const messageArea = document.getElementById('message-area');
-            const className = type === 'error' ? 'error-message' : 'success-message';
-            messageArea.innerHTML = `<div class="${className}">${text}</div>`;
-            setTimeout(() => {
-                messageArea.innerHTML = '';
-            }, 5000);
-        }
+        // 기본값 (에러 시 사용)
+        const DEFAULT_DATA = {
+            현재고객: '-',
+            월간이탈: '-',
+            추천: '-',
+            신규고객: '-',
+            활성고객: '-',
+            월방문자: '-',
+            관심고객: '-',
+            이탈율: '-',
+            추천율: '-',
+            전환율: '-',
+            활보율: '-'
+        };
 
         async function loadFromSheets() {
-            const sheetId = document.getElementById('sheet-id').value;
-            const apiKey = document.getElementById('api-key').value;
-            const sheetName = document.getElementById('sheet-name').value;
-
-            if (!sheetId || !apiKey) {
-                showMessage('Sheet ID와 API Key를 모두 입력해주세요.', 'error');
-                return;
-            }
-
             try {
-                showMessage('데이터를 불러오는 중...', 'success');
-                
-                const range = `${sheetName}!A:G`;
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+                const range = `${SHEET_NAME}!A:L`;
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
                 
                 const response = await fetch(url);
                 
                 if (!response.ok) {
-                    throw new Error(`API 오류: ${response.status} ${response.statusText}`);
+                    throw new Error(`API 오류 (${response.status})`);
                 }
                 
                 const data = await response.json();
                 
-                if (!data.values || data.values.length === 0) {
-                    showMessage('시트에 데이터가 없습니다.', 'error');
-                    return;
+                if (!data.values || data.values.length < 2) {
+                    throw new Error('데이터가 충분하지 않습니다 (최소 2행 필요)');
                 }
 
-                displayHistory(data.values);
-                showMessage(`${data.values.length - 1}개의 기록을 불러왔습니다!`, 'success');
+                // 2번째 행 데이터 (index 1)
+                const row = data.values[1];
+                const headers = data.values[0];
+                
+                // 데이터 파싱 (헤더 기반)
+                const dataMap = {};
+                headers.forEach((header, idx) => {
+                    dataMap[header] = row[idx] || '0';
+                });
+
+                // 필요한 값들 추출
+                const 현재고객 = parseInt(dataMap['현재고객'] || dataMap['현재_고객'] || '0') || 0;
+                const 월간이탈 = parseInt(dataMap['월간이탈'] || dataMap['월간_이탈'] || '0') || 0;
+                const 추천 = parseInt(dataMap['추천'] || '0') || 0;
+                const 신규고객 = parseInt(dataMap['신규고객'] || dataMap['신규_고객'] || '0') || 0;
+                const 활성고객 = parseInt(dataMap['활성고객'] || dataMap['활성_고객'] || '0') || 0;
+                const 월방문자 = parseInt(dataMap['월방문자'] || dataMap['월_방문자'] || '0') || 0;
+                const 관심고객 = parseInt(dataMap['관심고객'] || dataMap['관심_고객'] || '0') || 0;
+                
+                // 계산된 비율
+                const 이탈율 = 현재고객 > 0 ? ((월간이탈 / 현재고객) * 100).toFixed(1) : '0.0';
+                const 추천율 = 신규고객 > 0 ? ((추천 / 신규고객) * 100).toFixed(0) : '0';
+                const 전환율 = 관심고객 > 0 ? ((신규고객 / 관심고객) * 100).toFixed(0) : '0';
+                const 활보율 = 월방문자 > 0 ? ((관심고객 / 월방문자) * 100).toFixed(0) : '0';
+
+                drawDiagram({
+                    현재고객: 현재고객.toLocaleString(),
+                    월간이탈: 월간이탈.toLocaleString(),
+                    추천: 추천.toLocaleString(),
+                    신규고객: 신규고객.toLocaleString(),
+                    활성고객: 활성고객.toLocaleString(),
+                    월방문자: 월방문자.toLocaleString(),
+                    관심고객: 관심고객.toLocaleString(),
+                    이탈율,
+                    추천율,
+                    전환율,
+                    활보율
+                });
+
+                // 로딩 오버레이 제거
+                document.getElementById('loading-overlay').style.display = 'none';
                 
             } catch (error) {
                 console.error('Error:', error);
-                showMessage(`데이터 불러오기 실패: ${error.message}`, 'error');
+                
+                // 기본값으로 다이어그램 표시
+                drawDiagram(DEFAULT_DATA);
+                
+                // 로딩 오버레이 제거
+                document.getElementById('loading-overlay').style.display = 'none';
+                
+                // 에러 메시지 하단 표시
+                const errorEl = document.getElementById('error-message');
+                errorEl.innerHTML = `<strong>⚠️ 데이터 로드 실패:</strong> ${error.message}`;
+                errorEl.classList.add('show');
             }
         }
 
-        function displayHistory(rows) {
-            const historySection = document.getElementById('history-section');
-            const historyContent = document.getElementById('history-content');
+        function drawDiagram(data) {
+            const container = document.getElementById('diagram-container');
             
-            historySection.style.display = 'block';
+            const svg = `
+<svg viewBox="0 0 1400 400" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <polygon points="0 0, 10 3, 0 6" fill="#6c757d" />
+        </marker>
+    </defs>
+    
+    <!-- 상단 흐름 (5개 노드) -->
+    
+    <!-- 현재 고객 -->
+    <rect x="30" y="30" width="150" height="70" class="node-box"/>
+    <text x="105" y="55" class="node-text-title">현재 고객</text>
+    <text x="105" y="85" class="node-text-value">${data.현재고객}명</text>
+    
+    <!-- 화살표: 현재 고객 → 월간 이탈 -->
+    <line x1="180" y1="65" x2="245" y2="65" class="arrow"/>
+    <text x="213" y="55" class="arrow-label">-</text>
+    
+    <!-- 월간 이탈 -->
+    <rect x="245" y="30" width="150" height="70" class="node-box"/>
+    <text x="320" y="55" class="node-text-title">월간 이탈</text>
+    <text x="320" y="85" class="node-text-value">${data.월간이탈}명</text>
+    
+    <!-- 화살표: 월간 이탈 → 추천 -->
+    <line x1="395" y1="65" x2="460" y2="65" class="arrow"/>
+    <text x="428" y="55" class="arrow-label">+</text>
+    
+    <!-- 추천 -->
+    <rect x="460" y="30" width="150" height="70" class="node-box"/>
+    <text x="535" y="55" class="node-text-title">추천</text>
+    <text x="535" y="85" class="node-text-value">${data.추천}명</text>
+    
+    <!-- 화살표: 추천 → 신규 고객 -->
+    <line x1="610" y1="65" x2="675" y2="65" class="arrow"/>
+    <text x="643" y="55" class="arrow-label">+</text>
+    
+    <!-- 신규 고객 -->
+    <rect x="675" y="30" width="150" height="70" class="node-box"/>
+    <text x="750" y="55" class="node-text-title">신규 고객</text>
+    <text x="750" y="85" class="node-text-value">${data.신규고객}명</text>
+    
+    <!-- 화살표: 신규 고객 → 활성 고객 -->
+    <line x1="825" y1="65" x2="890" y2="65" class="arrow"/>
+    <text x="858" y="55" class="arrow-label">=</text>
+    
+    <!-- 활성 고객 -->
+    <rect x="890" y="30" width="150" height="70" class="node-box"/>
+    <text x="965" y="55" class="node-text-title">활성 고객</text>
+    <text x="965" y="85" class="node-text-value">${data.활성고객}명</text>
+    
+    <!-- 하단 흐름 -->
+    
+    <!-- 월 방문자 -->
+    <rect x="30" y="260" width="150" height="70" class="node-box"/>
+    <text x="105" y="285" class="node-text-title">월 방문자</text>
+    <text x="105" y="315" class="node-text-value">${data.월방문자}명</text>
+    
+    <!-- 화살표: 월 방문자 → 솔루션 -->
+    <line x1="180" y1="295" x2="295" y2="295" class="arrow"/>
+    <text x="238" y="285" class="arrow-label">활보</text>
+    <text x="238" y="310" class="rate-label">${data.활보율}%</text>
+    
+    <!-- 솔루션 (육각형) -->
+    <polygon points="350,265 420,265 450,295 420,325 350,325 320,295" class="node-factory"/>
+    <text x="385" y="290" class="node-text-title">솔루션</text>
+    <text x="385" y="310" class="node-text-title">(공장)</text>
+    
+    <!-- 화살표: 솔루션 → 관심 고객 -->
+    <line x1="450" y1="295" x2="565" y2="295" class="arrow"/>
+    
+    <!-- 관심 고객 -->
+    <rect x="565" y="260" width="150" height="70" class="node-box"/>
+    <text x="640" y="285" class="node-text-title">관심 고객</text>
+    <text x="640" y="315" class="node-text-value">${data.관심고객}명</text>
+    
+    <!-- 피드백 루프들 (곡선 화살표) -->
+    
+    <!-- 이탈 → 솔루션 곡선 화살표 -->
+    <path d="M 320 100 Q 320 185 385 265" class="arrow-curved"/>
+    <text x="280" y="170" class="rate-label">이탈 ${data.이탈율}%</text>
+    
+    <!-- 추천 → 솔루션 곡선 화살표 -->
+    <path d="M 535 100 Q 460 185 385 265" class="arrow-curved"/>
+    <text x="490" y="170" class="rate-label">추천 ${data.추천율}%</text>
+    
+    <!-- 신규 고객 → 관심 고객 곡선 화살표 -->
+    <path d="M 750 100 Q 750 180 640 260" class="arrow-curved"/>
+    <text x="770" y="170" class="rate-label">전환 ${data.전환율}%</text>
+    
+    <!-- 관심 고객 → 솔루션 곡선 화살표 (유지) -->
+    <path d="M 565 295 Q 507 295 450 295" class="arrow-curved"/>
+    <text x="507" y="350" class="rate-label">유지</text>
+</svg>
+            `;
             
-            let html = '<table class="history-table"><thead><tr>';
-            
-            // 헤더 행
-            if (rows[0]) {
-                rows[0].forEach(header => {
-                    html += `<th>${header}</th>`;
-                });
+            // 기존 SVG가 있으면 교체, 없으면 추가
+            const existingSvg = container.querySelector('svg');
+            if (existingSvg) {
+                existingSvg.outerHTML = svg;
+            } else {
+                container.innerHTML = svg;
             }
-            html += '</tr></thead><tbody>';
-            
-            // 데이터 행 (최신 10개만 표시, 역순)
-            const dataRows = rows.slice(1).reverse().slice(0, 10);
-            dataRows.forEach(row => {
-                html += '<tr>';
-                row.forEach((cell, index) => {
-                    // 숫자 컬럼에 천 단위 콤마 추가
-                    const displayCell = index > 0 && !isNaN(cell) ? parseInt(cell).toLocaleString() : cell;
-                    html += `<td>${displayCell || '-'}</td>`;
-                });
-                html += '</tr>';
-            });
-            
-            html += '</tbody></table>';
-            historyContent.innerHTML = html;
         }
 
-        function calculateConversionRate(current, previous) {
-            if (previous === 0) return 0;
-            return Math.round((current / previous) * 100);
-        }
-
-        function updateDiagram() {
-            const acquisition = parseInt(document.getElementById('acquisition').value) || 0;
-            const activation = parseInt(document.getElementById('activation').value) || 0;
-            const retention = parseInt(document.getElementById('retention').value) || 0;
-            const revenue = parseInt(document.getElementById('revenue').value) || 0;
-            const referral = parseInt(document.getElementById('referral').value) || 0;
-
-            // 전환율 계산
-            const convActivation = calculateConversionRate(activation, acquisition);
-            const convRetention = calculateConversionRate(retention, activation);
-            const convRevenue = calculateConversionRate(revenue, retention);
-            const convReferral = calculateConversionRate(referral, revenue);
-            const overallConv = calculateConversionRate(revenue, acquisition);
-
-            // UI 업데이트
-            document.getElementById('conv-activation').textContent = `${convActivation}%`;
-            document.getElementById('conv-retention').textContent = `${convRetention}%`;
-            document.getElementById('conv-revenue').textContent = `${convRevenue}%`;
-            document.getElementById('conv-referral').textContent = `${convReferral}%`;
-            document.getElementById('overall-conversion').textContent = `${overallConv}%`;
-
-            // 최대 이탈 구간 찾기
-            const drops = [
-                { stage: '획득→활성화', rate: convActivation },
-                { stage: '활성화→유지', rate: convRetention },
-                { stage: '유지→수익', rate: convRevenue },
-                { stage: '수익→추천', rate: convReferral }
-            ];
-            const lowestDrop = drops.reduce((min, curr) => curr.rate < min.rate ? curr : min);
-            document.getElementById('biggest-drop').textContent = `${lowestDrop.stage} (${lowestDrop.rate}%)`;
-
-            // Mermaid 다이어그램 생성
-            const mermaidCode = `
-graph TD
-    A["🎯 획득<br/><b>${acquisition.toLocaleString()}명</b><br/><small>시작 단계</small>"]
-    B["✅ 활성화<br/><b>${activation.toLocaleString()}명</b><br/><small>전환율: ${convActivation}%</small>"]
-    C["🔄 유지<br/><b>${retention.toLocaleString()}명</b><br/><small>전환율: ${convRetention}%</small>"]
-    D["💰 수익<br/><b>${revenue.toLocaleString()}명</b><br/><small>전환율: ${convRevenue}%</small>"]
-    E["📢 추천<br/><b>${referral.toLocaleString()}명</b><br/><small>전환율: ${convReferral}%</small>"]
-    
-    A -->|"${convActivation}%"| B
-    B -->|"${convRetention}%"| C
-    C -->|"${convRevenue}%"| D
-    D -->|"${convReferral}%"| E
-    
-    style A fill:#667eea,stroke:#5a67d8,stroke-width:3px,color:#fff
-    style B fill:#48bb78,stroke:#38a169,stroke-width:3px,color:#fff
-    style C fill:#4299e1,stroke:#3182ce,stroke-width:3px,color:#fff
-    style D fill:#ed8936,stroke:#dd6b20,stroke-width:3px,color:#fff
-    style E fill:#9f7aea,stroke:#805ad5,stroke-width:3px,color:#fff
-`;
-
-            const diagramDiv = document.getElementById('mermaid-diagram');
-            diagramDiv.innerHTML = mermaidCode;
-            
-            mermaid.run({
-                nodes: [diagramDiv]
-            });
-        }
-
-        // 입력 필드에 이벤트 리스너 추가
-        ['acquisition', 'activation', 'retention', 'revenue', 'referral'].forEach(id => {
-            document.getElementById(id).addEventListener('input', updateDiagram);
-        });
-
-        // 페이지 로드 시 초기화
-        window.addEventListener('load', () => {
-            loadConfig();
-            updateDiagram();
-        });
+        // 페이지 로드 시 자동으로 데이터 불러오기
+        window.addEventListener('load', loadFromSheets);
     </script>
 </body>
 </html>
