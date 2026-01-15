@@ -125,6 +125,20 @@
             text-anchor: middle;
         }
 
+        .comparison-text {
+            font-size: 11px;
+            font-weight: 600;
+            text-anchor: middle;
+        }
+
+        .comparison-increase {
+            fill: #28a745;
+        }
+
+        .comparison-decrease {
+            fill: #dc3545;
+        }
+
         .arrow {
             stroke: #6c757d;
             stroke-width: 2;
@@ -137,6 +151,13 @@
             stroke-width: 2;
             fill: none;
             marker-end: url(#arrowhead);
+        }
+
+        .arrow-return {
+            stroke: #e53e3e;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead-return);
         }
 
         .arrow-label {
@@ -184,7 +205,7 @@
             이탈율: '-',
             추천율: '-',
             전환율: '-',
-            활보율: '-'
+            확보율: '-'
         };
 
         async function loadFromSheets() {
@@ -207,34 +228,69 @@
                     throw new Error('데이터가 충분하지 않습니다 (최소 2행 필요)');
                 }
 
-                // 2번째 행 데이터 (index 1)
-                const row = data.values[1];
                 const headers = data.values[0];
                 
+                // 현재 데이터 (2번째 행, index 1)
+                const currentRow = data.values[1];
+                
+                // 이전 데이터 (3번째 행, index 2) - 있으면 가져오기
+                const previousRow = data.values.length > 2 ? data.values[2] : null;
+                
                 console.log('📋 헤더:', headers);
-                console.log('📊 데이터 행:', row);
+                console.log('📊 현재 데이터:', currentRow);
+                console.log('📊 이전 데이터:', previousRow);
                 
-                // 데이터 파싱 (헤더 기반)
-                const dataMap = {};
+                // 현재 데이터 파싱
+                const currentData = {};
                 headers.forEach((header, idx) => {
-                    dataMap[header] = row[idx] || '0';
+                    currentData[header] = currentRow[idx] || '0';
                 });
 
-                console.log('🗺️ 매핑된 데이터:', dataMap);
+                // 이전 데이터 파싱 (있는 경우)
+                let previousData = null;
+                if (previousRow) {
+                    previousData = {};
+                    headers.forEach((header, idx) => {
+                        previousData[header] = previousRow[idx] || '0';
+                    });
+                }
 
-                // 필요한 값들 추출 - 문자열을 숫자로 변환
-                const 날짜 = dataMap['날짜'] || '-';
-                const 현재고객 = parseInt(dataMap['현재고객']) || 0;
-                const 월간이탈 = parseInt(dataMap['월간이탈']) || 0;
-                const 추천 = parseInt(dataMap['추천']) || 0;
-                const 신규고객 = parseInt(dataMap['신규고객']) || 0;
-                const 활성고객 = parseInt(dataMap['활성고객']) || 0;
-                const 월방문자 = parseInt(dataMap['월방문자']) || 0;
-                const 관심고객 = parseInt(dataMap['관심고객']) || 0;
+                console.log('🗺️ 현재 데이터 매핑:', currentData);
+                console.log('🗺️ 이전 데이터 매핑:', previousData);
+
+                // 현재 값들 추출
+                const 날짜 = currentData['날짜'] || '-';
+                const 현재고객 = parseInt(currentData['현재고객']) || 0;
+                const 월간이탈 = parseInt(currentData['월간이탈']) || 0;
+                const 추천 = parseInt(currentData['추천']) || 0;
+                const 신규고객 = parseInt(currentData['신규고객']) || 0;
+                const 활성고객 = parseInt(currentData['활성고객']) || 0;
+                const 월방문자 = parseInt(currentData['월방문자']) || 0;
+                const 관심고객 = parseInt(currentData['관심고객']) || 0;
                 
-                console.log('🔢 파싱된 숫자:', {
-                    날짜, 현재고객, 월간이탈, 추천, 신규고객, 활성고객, 월방문자, 관심고객
-                });
+                // 이전 값들 추출 (있는 경우)
+                let comparison = null;
+                if (previousData) {
+                    const 이전_현재고객 = parseInt(previousData['현재고객']) || 0;
+                    const 이전_월간이탈 = parseInt(previousData['월간이탈']) || 0;
+                    const 이전_추천 = parseInt(previousData['추천']) || 0;
+                    const 이전_신규고객 = parseInt(previousData['신규고객']) || 0;
+                    const 이전_활성고객 = parseInt(previousData['활성고객']) || 0;
+                    const 이전_월방문자 = parseInt(previousData['월방문자']) || 0;
+                    const 이전_관심고객 = parseInt(previousData['관심고객']) || 0;
+                    
+                    comparison = {
+                        현재고객: calculateChange(현재고객, 이전_현재고객),
+                        월간이탈: calculateChange(월간이탈, 이전_월간이탈),
+                        추천: calculateChange(추천, 이전_추천),
+                        신규고객: calculateChange(신규고객, 이전_신규고객),
+                        활성고객: calculateChange(활성고객, 이전_활성고객),
+                        월방문자: calculateChange(월방문자, 이전_월방문자),
+                        관심고객: calculateChange(관심고객, 이전_관심고객)
+                    };
+                    
+                    console.log('📈 변화량 계산:', comparison);
+                }
 
                 // 날짜 표시
                 document.getElementById('date-value').textContent = 날짜;
@@ -244,9 +300,9 @@
                 const 이탈율 = 현재고객 > 0 ? ((월간이탈 / 현재고객) * 100).toFixed(1) : '0.0';
                 const 추천율 = 신규고객 > 0 ? ((추천 / 신규고객) * 100).toFixed(0) : '0';
                 const 전환율 = 관심고객 > 0 ? ((신규고객 / 관심고객) * 100).toFixed(0) : '0';
-                const 활보율 = 월방문자 > 0 ? ((관심고객 / 월방문자) * 100).toFixed(0) : '0';
+                const 확보율 = 월방문자 > 0 ? ((관심고객 / 월방문자) * 100).toFixed(0) : '0';
 
-                console.log('📈 계산된 비율:', { 이탈율, 추천율, 전환율, 활보율 });
+                console.log('📈 계산된 비율:', { 이탈율, 추천율, 전환율, 확보율 });
 
                 const displayData = {
                     현재고객: 현재고객.toLocaleString(),
@@ -259,7 +315,8 @@
                     이탈율,
                     추천율,
                     전환율,
-                    활보율
+                    확보율,
+                    comparison
                 };
 
                 console.log('✅ 최종 표시 데이터:', displayData);
@@ -285,103 +342,139 @@
             }
         }
 
+        function calculateChange(current, previous) {
+            if (!previous || previous === 0) return null;
+            const change = current - previous;
+            const percentage = ((change / previous) * 100).toFixed(1);
+            return {
+                change,
+                percentage,
+                isIncrease: change > 0
+            };
+        }
+
+        function renderComparison(key, x, y) {
+            const comp = window.currentComparison?.[key];
+            if (!comp) return '';
+            
+            const arrow = comp.isIncrease ? '▲' : '▼';
+            const className = comp.isIncrease ? 'comparison-increase' : 'comparison-decrease';
+            const sign = comp.isIncrease ? '+' : '';
+            
+            return `<text x="${x}" y="${y}" class="comparison-text ${className}">${arrow} ${sign}${comp.change} (${sign}${comp.percentage}%)</text>`;
+        }
+
         function drawDiagram(data) {
             console.log('🎨 다이어그램 그리기 시작:', data);
+            
+            // 비교 데이터를 전역으로 저장
+            window.currentComparison = data.comparison;
             
             const container = document.getElementById('diagram-container');
             
             const svg = `
-<svg viewBox="0 0 1070 400" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+<svg viewBox="0 0 1070 420" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
     <defs>
         <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
             <polygon points="0 0, 10 3, 0 6" fill="#6c757d" />
+        </marker>
+        <marker id="arrowhead-return" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <polygon points="0 0, 10 3, 0 6" fill="#e53e3e" />
         </marker>
     </defs>
     
     <!-- 상단 흐름 (5개 노드) -->
     
     <!-- 현재 고객 -->
-    <rect x="30" y="30" width="150" height="70" class="node-box"/>
+    <rect x="30" y="30" width="150" height="90" class="node-box"/>
     <text x="105" y="55" class="node-text-title">현재 고객</text>
     <text x="105" y="85" class="node-text-value">${data.현재고객}명</text>
+    ${renderComparison('현재고객', 105, 108)}
     
     <!-- 화살표: 현재 고객 → 월간 이탈 -->
-    <line x1="180" y1="65" x2="245" y2="65" class="arrow"/>
-    <text x="213" y="55" class="arrow-label">-</text>
+    <line x1="180" y1="75" x2="245" y2="75" class="arrow"/>
+    <text x="213" y="65" class="arrow-label">-</text>
     
     <!-- 월간 이탈 -->
-    <rect x="245" y="30" width="150" height="70" class="node-box"/>
+    <rect x="245" y="30" width="150" height="90" class="node-box"/>
     <text x="320" y="55" class="node-text-title">월간 이탈</text>
     <text x="320" y="85" class="node-text-value">${data.월간이탈}명</text>
+    ${renderComparison('월간이탈', 320, 108)}
     
     <!-- 화살표: 월간 이탈 → 추천 -->
-    <line x1="395" y1="65" x2="460" y2="65" class="arrow"/>
-    <text x="428" y="55" class="arrow-label">+</text>
+    <line x1="395" y1="75" x2="460" y2="75" class="arrow"/>
+    <text x="428" y="65" class="arrow-label">+</text>
     
     <!-- 추천 -->
-    <rect x="460" y="30" width="150" height="70" class="node-box"/>
+    <rect x="460" y="30" width="150" height="90" class="node-box"/>
     <text x="535" y="55" class="node-text-title">추천</text>
     <text x="535" y="85" class="node-text-value">${data.추천}명</text>
+    ${renderComparison('추천', 535, 108)}
     
     <!-- 화살표: 추천 → 신규 고객 -->
-    <line x1="610" y1="65" x2="675" y2="65" class="arrow"/>
-    <text x="643" y="55" class="arrow-label">+</text>
+    <line x1="610" y1="75" x2="675" y2="75" class="arrow"/>
+    <text x="643" y="65" class="arrow-label">+</text>
     
     <!-- 신규 고객 -->
-    <rect x="675" y="30" width="150" height="70" class="node-box"/>
+    <rect x="675" y="30" width="150" height="90" class="node-box"/>
     <text x="750" y="55" class="node-text-title">신규 고객</text>
     <text x="750" y="85" class="node-text-value">${data.신규고객}명</text>
+    ${renderComparison('신규고객', 750, 108)}
     
     <!-- 화살표: 신규 고객 → 활성 고객 -->
-    <line x1="825" y1="65" x2="890" y2="65" class="arrow"/>
-    <text x="858" y="55" class="arrow-label">=</text>
+    <line x1="825" y1="75" x2="890" y2="75" class="arrow"/>
+    <text x="858" y="65" class="arrow-label">=</text>
     
     <!-- 활성 고객 -->
-    <rect x="890" y="30" width="150" height="70" class="node-box"/>
+    <rect x="890" y="30" width="150" height="90" class="node-box"/>
     <text x="965" y="55" class="node-text-title">활성 고객</text>
     <text x="965" y="85" class="node-text-value">${data.활성고객}명</text>
+    ${renderComparison('활성고객', 965, 108)}
     
     <!-- 하단 흐름 -->
     
     <!-- 월 방문자 -->
-    <rect x="30" y="260" width="150" height="70" class="node-box"/>
-    <text x="105" y="285" class="node-text-title">월 방문자</text>
-    <text x="105" y="315" class="node-text-value">${data.월방문자}명</text>
+    <rect x="30" y="270" width="150" height="90" class="node-box"/>
+    <text x="105" y="295" class="node-text-title">월 방문자</text>
+    <text x="105" y="325" class="node-text-value">${data.월방문자}명</text>
+    ${renderComparison('월방문자', 105, 348)}
     
     <!-- 화살표: 월 방문자 → 솔루션 -->
-    <line x1="180" y1="295" x2="295" y2="295" class="arrow"/>
-    <text x="238" y="285" class="rate-label">활보 ${data.활보율}%</text>
+    <line x1="180" y1="315" x2="295" y2="315" class="arrow"/>
+    <text x="238" y="305" class="rate-label">확보 ${data.확보율}%</text>
     
     <!-- 솔루션 (육각형) -->
-    <polygon points="350,265 420,265 450,295 420,325 350,325 320,295" class="node-factory"/>
-    <text x="385" y="290" class="node-text-title">솔루션</text>
-    <text x="385" y="310" class="node-text-title">(공장)</text>
+    <polygon points="350,285 420,285 450,315 420,345 350,345 320,315" class="node-factory"/>
+    <text x="385" y="310" class="node-text-title">솔루션</text>
+    <text x="385" y="330" class="node-text-title">(공장)</text>
     
-    <!-- 화살표: 솔루션 → 관심 고객 -->
-    <line x1="450" y1="295" x2="565" y2="295" class="arrow"/>
+    <!-- 화살표: 솔루션 → 관심 고객 (활성화) -->
+    <line x1="450" y1="315" x2="565" y2="315" class="arrow"/>
+    <text x="507" y="305" class="rate-label">활성화</text>
     
     <!-- 관심 고객 -->
-    <rect x="565" y="260" width="150" height="70" class="node-box"/>
-    <text x="640" y="285" class="node-text-title">관심 고객</text>
-    <text x="640" y="315" class="node-text-value">${data.관심고객}명</text>
+    <rect x="565" y="270" width="150" height="90" class="node-box"/>
+    <text x="640" y="295" class="node-text-title">관심 고객</text>
+    <text x="640" y="325" class="node-text-value">${data.관심고객}명</text>
+    ${renderComparison('관심고객', 640, 348)}
     
-    <!-- 피드백 루프들 (곡선 화살표) - 방향 수정 -->
+    <!-- 역방향 화살표: 관심 고객 → 솔루션 (유지) - 아래쪽 -->
+    <path d="M 565 340 Q 507 355 450 340" class="arrow-return"/>
+    <text x="507" y="370" class="rate-label" style="fill: #e53e3e;">유지</text>
     
-    <!-- 솔루션 → 월간 이탈 (수정됨) -->
-    <path d="M 385 265 Q 320 185 320 100" class="arrow-curved"/>
-    <text x="340" y="170" class="rate-label">이탈 ${data.이탈율}%</text>
+    <!-- 피드백 루프들 (곡선 화살표) -->
     
-    <!-- 솔루션 → 추천 (수정됨) -->
-    <path d="M 385 265 Q 460 185 535 100" class="arrow-curved"/>
-    <text x="450" y="170" class="rate-label">추천 ${data.추천율}%</text>
+    <!-- 솔루션 → 월간 이탈 -->
+    <path d="M 385 285 Q 320 200 320 120" class="arrow-curved"/>
+    <text x="340" y="190" class="rate-label">이탈 ${data.이탈율}%</text>
     
-    <!-- 관심 고객 → 신규 고객 (수정됨) -->
-    <path d="M 640 260 Q 750 180 750 100" class="arrow-curved"/>
-    <text x="720" y="170" class="rate-label">전환 ${data.전환율}%</text>
+    <!-- 솔루션 → 추천 -->
+    <path d="M 385 285 Q 460 200 535 120" class="arrow-curved"/>
+    <text x="450" y="190" class="rate-label">추천 ${data.추천율}%</text>
     
-    <!-- 관심 고객 → 솔루션 곡선 화살표 (유지) - 텍스트 위치 수정 -->
-    <path d="M 565 295 Q 507 295 450 295" class="arrow-curved"/>
-    <text x="507" y="285" class="rate-label">유지</text>
+    <!-- 관심 고객 → 신규 고객 -->
+    <path d="M 640 270 Q 750 190 750 120" class="arrow-curved"/>
+    <text x="720" y="185" class="rate-label">전환 ${data.전환율}%</text>
 </svg>
             `;
             
