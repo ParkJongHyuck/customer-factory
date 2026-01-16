@@ -105,10 +105,17 @@
             rx: 20;
         }
 
-        .node-factory {
-            fill: white;
-            stroke: #6c757d;
+        .node-box-highlight {
+            fill: #e8f4f8;
+            stroke: #4a90e2;
             stroke-width: 2;
+            rx: 20;
+        }
+
+        .node-factory {
+            fill: #fff9e6;
+            stroke: #f39c12;
+            stroke-width: 3;
         }
 
         .node-text-title {
@@ -153,11 +160,31 @@
             marker-end: url(#arrowhead);
         }
 
+        .arrow-feedback {
+            stroke-width: 2.5;
+            fill: none;
+        }
+
+        .arrow-churn {
+            stroke: #e74c3c;
+            marker-end: url(#arrowhead-churn);
+        }
+
+        .arrow-referral {
+            stroke: #9b59b6;
+            marker-end: url(#arrowhead-referral);
+        }
+
+        .arrow-conversion {
+            stroke: #14a085;
+            marker-end: url(#arrowhead-conversion);
+        }
+
         .arrow-return {
-            stroke: #e53e3e;
+            stroke: #6c757d;
             stroke-width: 2;
             fill: none;
-            marker-end: url(#arrowhead-return);
+            marker-end: url(#arrowhead);
         }
 
         .arrow-label {
@@ -169,6 +196,76 @@
         .rate-label {
             font-size: 12pt;
             fill: #6c757d;
+            text-anchor: middle;
+        }
+
+        .rate-box {
+            rx: 8;
+            ry: 8;
+        }
+
+        .rate-box-churn {
+            fill: #ffe6e6;
+            stroke: #e74c3c;
+            stroke-width: 1.5;
+        }
+
+        .rate-box-referral {
+            fill: #f3e5f5;
+            stroke: #9b59b6;
+            stroke-width: 1.5;
+        }
+
+        .rate-box-conversion {
+            fill: #e0f7f7;
+            stroke: #14a085;
+            stroke-width: 1.5;
+        }
+
+        .rate-box-acquisition {
+            fill: #e8f8f5;
+            stroke: #27ae60;
+            stroke-width: 1.5;
+        }
+
+        .rate-box-activation {
+            fill: #e3f2fd;
+            stroke: #2196f3;
+            stroke-width: 1.5;
+        }
+
+        .rate-text-churn {
+            fill: #c0392b;
+            font-size: 12px;
+            font-weight: 600;
+            text-anchor: middle;
+        }
+
+        .rate-text-referral {
+            fill: #7d3c98;
+            font-size: 12px;
+            font-weight: 600;
+            text-anchor: middle;
+        }
+
+        .rate-text-conversion {
+            fill: #0d7377;
+            font-size: 12px;
+            font-weight: 600;
+            text-anchor: middle;
+        }
+
+        .rate-text-acquisition {
+            fill: #1e8449;
+            font-size: 12px;
+            font-weight: 600;
+            text-anchor: middle;
+        }
+
+        .rate-text-activation {
+            fill: #1565c0;
+            font-size: 12px;
+            font-weight: 600;
             text-anchor: middle;
         }
     </style>
@@ -195,17 +292,19 @@
 
         // 기본값 (에러 시 사용)
         const DEFAULT_DATA = {
-            현재고객: '-',
-            월간이탈: '-',
+            누적고객: '-',
+            이탈: '-',
             추천: '-',
             신규고객: '-',
             활성고객: '-',
-            월방문자: '-',
+            방문자: '-',
+            잠재고객: '-',
             관심고객: '-',
             이탈율: '-',
             추천율: '-',
             전환율: '-',
-            확보율: '-'
+            확보율: '-',
+            활성화율: '-'
         };
 
         async function loadFromSheets() {
@@ -260,32 +359,35 @@
 
                 // 현재 값들 추출
                 const 날짜 = currentData['날짜'] || '-';
-                const 현재고객 = parseInt(currentData['현재고객']) || 0;
-                const 월간이탈 = parseInt(currentData['월간이탈']) || 0;
+                const 누적고객 = parseInt(currentData['누적고객']) || 0;
+                const 이탈 = parseInt(currentData['이탈']) || 0;
                 const 추천 = parseInt(currentData['추천']) || 0;
                 const 신규고객 = parseInt(currentData['신규고객']) || 0;
                 const 활성고객 = parseInt(currentData['활성고객']) || 0;
-                const 월방문자 = parseInt(currentData['월방문자']) || 0;
+                const 방문자 = parseInt(currentData['방문자']) || 0;
+                const 잠재고객 = parseInt(currentData['잠재고객']) || 0;
                 const 관심고객 = parseInt(currentData['관심고객']) || 0;
                 
                 // 이전 값들 추출 (있는 경우)
                 let comparison = null;
                 if (previousData) {
-                    const 이전_현재고객 = parseInt(previousData['현재고객']) || 0;
-                    const 이전_월간이탈 = parseInt(previousData['월간이탈']) || 0;
+                    const 이전_누적고객 = parseInt(previousData['누적고객']) || 0;
+                    const 이전_이탈 = parseInt(previousData['이탈']) || 0;
                     const 이전_추천 = parseInt(previousData['추천']) || 0;
                     const 이전_신규고객 = parseInt(previousData['신규고객']) || 0;
                     const 이전_활성고객 = parseInt(previousData['활성고객']) || 0;
-                    const 이전_월방문자 = parseInt(previousData['월방문자']) || 0;
+                    const 이전_방문자 = parseInt(previousData['방문자']) || 0;
+                    const 이전_잠재고객 = parseInt(previousData['잠재고객']) || 0;
                     const 이전_관심고객 = parseInt(previousData['관심고객']) || 0;
                     
                     comparison = {
-                        현재고객: calculateChange(현재고객, 이전_현재고객),
-                        월간이탈: calculateChange(월간이탈, 이전_월간이탈),
+                        누적고객: calculateChange(누적고객, 이전_누적고객),
+                        이탈: calculateChange(이탈, 이전_이탈),
                         추천: calculateChange(추천, 이전_추천),
                         신규고객: calculateChange(신규고객, 이전_신규고객),
                         활성고객: calculateChange(활성고객, 이전_활성고객),
-                        월방문자: calculateChange(월방문자, 이전_월방문자),
+                        방문자: calculateChange(방문자, 이전_방문자),
+                        잠재고객: calculateChange(잠재고객, 이전_잠재고객),
                         관심고객: calculateChange(관심고객, 이전_관심고객)
                     };
                     
@@ -297,25 +399,28 @@
                 document.getElementById('date-header').style.display = 'block';
 
                 // 계산된 비율
-                const 이탈율 = 현재고객 > 0 ? ((월간이탈 / 현재고객) * 100).toFixed(1) : '0.0';
+                const 이탈율 = 누적고객 > 0 ? ((이탈 / 누적고객) * 100).toFixed(1) : '0.0';
                 const 추천율 = 신규고객 > 0 ? ((추천 / 신규고객) * 100).toFixed(0) : '0';
                 const 전환율 = 관심고객 > 0 ? ((신규고객 / 관심고객) * 100).toFixed(0) : '0';
-                const 확보율 = 월방문자 > 0 ? ((관심고객 / 월방문자) * 100).toFixed(0) : '0';
+                const 확보율 = 방문자 > 0 ? ((잠재고객 / 방문자) * 100).toFixed(0) : '0';
+                const 활성화율 = 잠재고객 > 0 ? ((관심고객 / 잠재고객) * 100).toFixed(0) : '0';
 
-                console.log('📈 계산된 비율:', { 이탈율, 추천율, 전환율, 확보율 });
+                console.log('📈 계산된 비율:', { 이탈율, 추천율, 전환율, 확보율, 활성화율 });
 
                 const displayData = {
-                    현재고객: 현재고객.toLocaleString(),
-                    월간이탈: 월간이탈.toLocaleString(),
+                    누적고객: 누적고객.toLocaleString(),
+                    이탈: 이탈.toLocaleString(),
                     추천: 추천.toLocaleString(),
                     신규고객: 신규고객.toLocaleString(),
                     활성고객: 활성고객.toLocaleString(),
-                    월방문자: 월방문자.toLocaleString(),
+                    방문자: 방문자.toLocaleString(),
+                    잠재고객: 잠재고객.toLocaleString(),
                     관심고객: 관심고객.toLocaleString(),
                     이탈율,
                     추천율,
                     전환율,
                     확보율,
+                    활성화율,
                     comparison
                 };
 
@@ -373,7 +478,7 @@
             const container = document.getElementById('diagram-container');
             
             const svg = `
-<svg viewBox="0 0 1070 420" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+<svg viewBox="0 0 1070 380" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
     <defs>
         <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
             <polygon points="0 0, 10 3, 0 6" fill="#6c757d" />
@@ -381,31 +486,40 @@
         <marker id="arrowhead-return" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
             <polygon points="0 0, 10 3, 0 6" fill="#e53e3e" />
         </marker>
+        <marker id="arrowhead-churn" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <polygon points="0 0, 10 3, 0 6" fill="#e74c3c" />
+        </marker>
+        <marker id="arrowhead-referral" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <polygon points="0 0, 10 3, 0 6" fill="#9b59b6" />
+        </marker>
+        <marker id="arrowhead-conversion" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <polygon points="0 0, 10 3, 0 6" fill="#14a085" />
+        </marker>
     </defs>
     
-    <!-- 상단 흐름 (5개 노드) -->
+    <!-- 상단 흐름 (5개 노드) - 높이 기준 1: y=30 -->
     
-    <!-- 현재 고객 -->
+    <!-- 누적 고객 -->
     <rect x="30" y="30" width="150" height="90" class="node-box"/>
-    <text x="105" y="55" class="node-text-title">현재 고객</text>
-    <text x="105" y="85" class="node-text-value">${data.현재고객}명</text>
-    ${renderComparison('현재고객', 105, 108)}
+    <text x="105" y="55" class="node-text-title">누적 고객</text>
+    <text x="105" y="85" class="node-text-value">${data.누적고객}명</text>
+    ${renderComparison('누적고객', 105, 108)}
     
-    <!-- 화살표: 현재 고객 → 월간 이탈 -->
+    <!-- 화살표: 누적 고객 → 이탈 -->
     <line x1="180" y1="75" x2="245" y2="75" class="arrow"/>
     <text x="213" y="65" class="arrow-label">-</text>
     
-    <!-- 월간 이탈 -->
+    <!-- 이탈 -->
     <rect x="245" y="30" width="150" height="90" class="node-box"/>
-    <text x="320" y="55" class="node-text-title">월간 이탈</text>
-    <text x="320" y="85" class="node-text-value">${data.월간이탈}명</text>
-    ${renderComparison('월간이탈', 320, 108)}
+    <text x="320" y="55" class="node-text-title">이탈</text>
+    <text x="320" y="85" class="node-text-value">${data.이탈}명</text>
+    ${renderComparison('이탈', 320, 108)}
     
-    <!-- 화살표: 월간 이탈 → 추천 -->
+    <!-- 화살표: 이탈 → 추천 -->
     <line x1="395" y1="75" x2="460" y2="75" class="arrow"/>
     <text x="428" y="65" class="arrow-label">+</text>
     
-    <!-- 추천 -->
+    <!-- 추천 - 균등 정렬 (중심 535) -->
     <rect x="460" y="30" width="150" height="90" class="node-box"/>
     <text x="535" y="55" class="node-text-title">추천</text>
     <text x="535" y="85" class="node-text-value">${data.추천}명</text>
@@ -415,8 +529,8 @@
     <line x1="610" y1="75" x2="675" y2="75" class="arrow"/>
     <text x="643" y="65" class="arrow-label">+</text>
     
-    <!-- 신규 고객 -->
-    <rect x="675" y="30" width="150" height="90" class="node-box"/>
+    <!-- 신규 고객 (핵심 노드) -->
+    <rect x="675" y="30" width="150" height="90" class="node-box-highlight"/>
     <text x="750" y="55" class="node-text-title">신규 고객</text>
     <text x="750" y="85" class="node-text-value">${data.신규고객}명</text>
     ${renderComparison('신규고객', 750, 108)}
@@ -425,56 +539,77 @@
     <line x1="825" y1="75" x2="890" y2="75" class="arrow"/>
     <text x="858" y="65" class="arrow-label">=</text>
     
-    <!-- 활성 고객 -->
-    <rect x="890" y="30" width="150" height="90" class="node-box"/>
+    <!-- 활성 고객 (핵심 노드) -->
+    <rect x="890" y="30" width="150" height="90" class="node-box-highlight"/>
     <text x="965" y="55" class="node-text-title">활성 고객</text>
     <text x="965" y="85" class="node-text-value">${data.활성고객}명</text>
     ${renderComparison('활성고객', 965, 108)}
     
-    <!-- 하단 흐름 -->
+    <!-- 하단 흐름 - 높이 기준 4: y=270 -->
     
-    <!-- 월 방문자 -->
+    <!-- 방문자 -->
     <rect x="30" y="270" width="150" height="90" class="node-box"/>
-    <text x="105" y="295" class="node-text-title">월 방문자</text>
-    <text x="105" y="325" class="node-text-value">${data.월방문자}명</text>
-    ${renderComparison('월방문자', 105, 348)}
+    <text x="105" y="295" class="node-text-title">방문자</text>
+    <text x="105" y="325" class="node-text-value">${data.방문자}명</text>
+    ${renderComparison('방문자', 105, 348)}
     
-    <!-- 화살표: 월 방문자 → 솔루션 -->
-    <line x1="180" y1="315" x2="295" y2="315" class="arrow"/>
-    <text x="238" y="305" class="rate-label">확보 ${data.확보율}%</text>
+    <!-- 화살표: 방문자 → 잠재고객 -->
+    <line x1="180" y1="315" x2="245" y2="315" class="arrow"/>
     
-    <!-- 솔루션 (육각형) -->
-    <polygon points="350,285 420,285 450,315 420,345 350,345 320,315" class="node-factory"/>
-    <text x="385" y="310" class="node-text-title">솔루션</text>
-    <text x="385" y="330" class="node-text-title">(공장)</text>
+    <!-- 확보율 박스 - 높이 기준 3: y=240 -->
+    <rect x="170" y="240" width="86" height="24" class="rate-box rate-box-acquisition"/>
+    <text x="213" y="255" class="rate-text-acquisition">확보 ${data.확보율}%</text>
     
-    <!-- 화살표: 솔루션 → 관심 고객 (활성화) -->
-    <line x1="450" y1="315" x2="565" y2="315" class="arrow"/>
-    <text x="507" y="305" class="rate-label">활성화</text>
+    <!-- 잠재고객 - 이탈과 x축 정렬 (중심 320) -->
+    <rect x="245" y="270" width="150" height="90" class="node-box"/>
+    <text x="320" y="295" class="node-text-title">잠재고객</text>
+    <text x="320" y="325" class="node-text-value">${data.잠재고객}명</text>
+    ${renderComparison('잠재고객', 320, 348)}
     
-    <!-- 관심 고객 -->
-    <rect x="565" y="270" width="150" height="90" class="node-box"/>
-    <text x="640" y="295" class="node-text-title">관심 고객</text>
-    <text x="640" y="325" class="node-text-value">${data.관심고객}명</text>
-    ${renderComparison('관심고객', 640, 348)}
+    <!-- 화살표: 잠재고객 → 솔루션 -->
+    <line x1="395" y1="315" x2="470" y2="315" class="arrow"/>
+    
+    <!-- 솔루션 (육각형) - 정확한 중심 535 -->
+    <polygon points="495,285 575,285 600,315 575,345 495,345 470,315" class="node-factory"/>
+    <text x="535" y="310" class="node-text-title">솔루션</text>
+    <text x="535" y="330" class="node-text-title">(공장)</text>
+    
+    <!-- 화살표: 솔루션 → 관심 고객 -->
+    <line x1="600" y1="315" x2="675" y2="315" class="arrow"/>
+    
+    <!-- 활성화율 박스 - 높이 기준 3: y=240 -->
+    <rect x="588" y="240" width="100" height="24" class="rate-box rate-box-activation"/>
+    <text x="638" y="255" class="rate-text-activation">활성화 ${data.활성화율}%</text>
+    
+    <!-- 관심 고객 (핵심 노드) - 신규고객과 x축 정렬 -->
+    <rect x="675" y="270" width="150" height="90" class="node-box-highlight"/>
+    <text x="750" y="295" class="node-text-title">관심 고객</text>
+    <text x="750" y="325" class="node-text-value">${data.관심고객}명</text>
+    ${renderComparison('관심고객', 750, 348)}
     
     <!-- 역방향 화살표: 관심 고객 → 솔루션 (유지) - 아래쪽 -->
-    <path d="M 565 340 Q 507 355 450 340" class="arrow-return"/>
-    <text x="507" y="370" class="rate-label" style="fill: #e53e3e;">유지</text>
+    <path d="M 675 340 Q 637 355 600 340" class="arrow-return"/>
+    <text x="637" y="372" class="rate-label" style="fill: #6c757d;">유지</text>
     
-    <!-- 피드백 루프들 (곡선 화살표) -->
+    <!-- 피드백 루프들 (부드러운 직각 화살표) - 높이 기준 2: y=160 -->
     
-    <!-- 솔루션 → 월간 이탈 -->
-    <path d="M 385 285 Q 320 200 320 120" class="arrow-curved"/>
-    <text x="340" y="190" class="rate-label">이탈 ${data.이탈율}%</text>
+    <!-- 솔루션 → 이탈 (이탈 박스를 통과) -->
+    <path d="M 495 285 L 495 172 L 320 172 L 320 120" class="arrow-feedback arrow-churn"/>
+    <!-- 이탈율 박스 - 화살표가 통과 -->
+    <rect x="350" y="160" width="80" height="24" class="rate-box rate-box-churn"/>
+    <text x="390" y="175" class="rate-text-churn">이탈 ${data.이탈율}%</text>
     
-    <!-- 솔루션 → 추천 -->
-    <path d="M 385 285 Q 460 200 535 120" class="arrow-curved"/>
-    <text x="450" y="190" class="rate-label">추천 ${data.추천율}%</text>
+    <!-- 솔루션 → 추천 (수직 화살표) -->
+    <path d="M 535 285 L 535 120" class="arrow-feedback arrow-referral"/>
+    <!-- 추천율 박스 -->
+    <rect x="495" y="160" width="80" height="24" class="rate-box rate-box-referral"/>
+    <text x="535" y="175" class="rate-text-referral">추천 ${data.추천율}%</text>
     
-    <!-- 관심 고객 → 신규 고객 -->
-    <path d="M 640 270 Q 750 190 750 120" class="arrow-curved"/>
-    <text x="720" y="185" class="rate-label">전환 ${data.전환율}%</text>
+    <!-- 관심 고객 → 신규 고객 (수직 화살표) -->
+    <path d="M 750 270 L 750 120" class="arrow-feedback arrow-conversion"/>
+    <!-- 전환율 박스 -->
+    <rect x="710" y="160" width="80" height="24" class="rate-box rate-box-conversion"/>
+    <text x="750" y="175" class="rate-text-conversion">전환 ${data.전환율}%</text>
 </svg>
             `;
             
