@@ -29,21 +29,23 @@
 
         .date-header {
             text-align: center;
-            margin-bottom: 8px;
-            display: none;
+            margin-top: 20px;
+            margin-bottom: 15px;
         }
 
         .date-label {
-            font-size: 13px;
+            font-size: 16px;
             color: #6c757d;
             font-weight: 600;
             margin-right: 6px;
         }
 
         .date-value {
-            font-size: 14px;
+            font-size: 16px;
             color: #212529;
             font-weight: 700;
+            max-width: 800px;
+            display: inline-block;
         }
         
         .diagram-container {
@@ -70,27 +72,11 @@
         .loading {
             text-align: center;
             color: #6c757d;
-            font-size: 14px;
+            font-size: 16px;
         }
 
         .error-message {
-            text-align: center;
-            color: #856404;
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 12px;
-            margin-top: 8px;
             display: none;
-        }
-
-        .error-message.show {
-            display: block;
-        }
-
-        .error-message strong {
-            font-weight: 600;
         }
 
         svg {
@@ -119,21 +105,21 @@
         }
 
         .node-text-title {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
             fill: #495057;
             text-anchor: middle;
         }
 
         .node-text-value {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 700;
             fill: #212529;
             text-anchor: middle;
         }
 
         .comparison-text {
-            font-size: 11px;
+            font-size: 16px;
             font-weight: 600;
             text-anchor: middle;
         }
@@ -188,13 +174,13 @@
         }
 
         .arrow-label {
-            font-size: 12px;
+            font-size: 16px;
             fill: #6c757d;
             text-anchor: middle;
         }
 
         .rate-label {
-            font-size: 12pt;
+            font-size: 16px;
             fill: #6c757d;
             text-anchor: middle;
         }
@@ -236,35 +222,35 @@
 
         .rate-text-churn {
             fill: #c0392b;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: 600;
             text-anchor: middle;
         }
 
         .rate-text-referral {
             fill: #7d3c98;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: 600;
             text-anchor: middle;
         }
 
         .rate-text-conversion {
             fill: #0d7377;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: 600;
             text-anchor: middle;
         }
 
         .rate-text-acquisition {
             fill: #1e8449;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: 600;
             text-anchor: middle;
         }
 
         .rate-text-activation {
             fill: #1565c0;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: 600;
             text-anchor: middle;
         }
@@ -274,7 +260,7 @@
     <div class="wrapper">
         <div class="date-header" id="date-header">
             <span class="date-label">고객 공장:</span>
-            <span class="date-value" id="date-value">-</span>
+            <span class="date-value" id="date-value">로딩 중...</span>
         </div>
         <div class="diagram-container" id="diagram-container">
             <div class="loading-overlay" id="loading-overlay">
@@ -394,9 +380,9 @@
                     console.log('📈 변화량 계산:', comparison);
                 }
 
-                // 날짜 표시
-                document.getElementById('date-value').textContent = 날짜;
-                document.getElementById('date-header').style.display = 'block';
+                // 날짜 표시 - 항상 표시
+                const 날짜표시 = 날짜 || '데이터 없음';
+                document.getElementById('date-value').textContent = 날짜표시;
 
                 // 계산된 비율
                 const 이탈율 = 누적고객 > 0 ? ((이탈 / 누적고객) * 100).toFixed(1) : '0.0';
@@ -434,16 +420,14 @@
             } catch (error) {
                 console.error('❌ 오류 발생:', error);
                 
+                // 날짜 위치에 에러 메시지 표시
+                document.getElementById('date-value').textContent = `데이터 로드 실패: ${error.message}`;
+                
                 // 기본값으로 다이어그램 표시
                 drawDiagram(DEFAULT_DATA);
                 
                 // 로딩 오버레이 제거
                 document.getElementById('loading-overlay').style.display = 'none';
-                
-                // 에러 메시지 하단 표시
-                const errorEl = document.getElementById('error-message');
-                errorEl.innerHTML = `<strong>⚠️ 데이터 로드 실패:</strong> ${error.message}`;
-                errorEl.classList.add('show');
             }
         }
 
@@ -478,7 +462,7 @@
             const container = document.getElementById('diagram-container');
             
             const svg = `
-<svg viewBox="0 0 1070 380" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+<svg viewBox="0 0 1070 360" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
     <defs>
         <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
             <polygon points="0 0, 10 3, 0 6" fill="#6c757d" />
@@ -545,71 +529,71 @@
     <text x="965" y="85" class="node-text-value">${data.활성고객}명</text>
     ${renderComparison('활성고객', 965, 108)}
     
-    <!-- 하단 흐름 - 높이 기준 4: y=270 -->
+    <!-- 하단 흐름 - 높이 기준 4: y=250 -->
     
     <!-- 방문자 -->
-    <rect x="30" y="270" width="150" height="90" class="node-box"/>
-    <text x="105" y="295" class="node-text-title">방문자</text>
-    <text x="105" y="325" class="node-text-value">${data.방문자}명</text>
-    ${renderComparison('방문자', 105, 348)}
+    <rect x="30" y="250" width="150" height="90" class="node-box"/>
+    <text x="105" y="275" class="node-text-title">방문자</text>
+    <text x="105" y="305" class="node-text-value">${data.방문자}명</text>
+    ${renderComparison('방문자', 105, 328)}
     
     <!-- 화살표: 방문자 → 잠재고객 -->
-    <line x1="180" y1="315" x2="245" y2="315" class="arrow"/>
+    <line x1="180" y1="295" x2="245" y2="295" class="arrow"/>
     
-    <!-- 확보율 박스 - 높이 기준 3: y=240 -->
-    <rect x="170" y="240" width="86" height="24" class="rate-box rate-box-acquisition"/>
-    <text x="213" y="255" class="rate-text-acquisition">확보 ${data.확보율}%</text>
+    <!-- 확보율 박스 - 높이 기준 3: y=215 -->
+    <rect x="170" y="215" width="86" height="28" class="rate-box rate-box-acquisition"/>
+    <text x="213" y="233" class="rate-text-acquisition">확보 ${data.확보율}%</text>
     
     <!-- 잠재고객 - 이탈과 x축 정렬 (중심 320) -->
-    <rect x="245" y="270" width="150" height="90" class="node-box"/>
-    <text x="320" y="295" class="node-text-title">잠재고객</text>
-    <text x="320" y="325" class="node-text-value">${data.잠재고객}명</text>
-    ${renderComparison('잠재고객', 320, 348)}
+    <rect x="245" y="250" width="150" height="90" class="node-box"/>
+    <text x="320" y="275" class="node-text-title">잠재고객</text>
+    <text x="320" y="305" class="node-text-value">${data.잠재고객}명</text>
+    ${renderComparison('잠재고객', 320, 328)}
     
     <!-- 화살표: 잠재고객 → 솔루션 -->
-    <line x1="395" y1="315" x2="470" y2="315" class="arrow"/>
+    <line x1="395" y1="295" x2="470" y2="295" class="arrow"/>
     
     <!-- 솔루션 (육각형) - 정확한 중심 535 -->
-    <polygon points="495,285 575,285 600,315 575,345 495,345 470,315" class="node-factory"/>
-    <text x="535" y="310" class="node-text-title">솔루션</text>
-    <text x="535" y="330" class="node-text-title">(공장)</text>
+    <polygon points="495,265 575,265 600,295 575,325 495,325 470,295" class="node-factory"/>
+    <text x="535" y="290" class="node-text-title">솔루션</text>
+    <text x="535" y="310" class="node-text-title">(공장)</text>
     
     <!-- 화살표: 솔루션 → 관심 고객 -->
-    <line x1="600" y1="315" x2="675" y2="315" class="arrow"/>
+    <line x1="600" y1="295" x2="675" y2="295" class="arrow"/>
     
-    <!-- 활성화율 박스 - 높이 기준 3: y=240 -->
-    <rect x="588" y="240" width="100" height="24" class="rate-box rate-box-activation"/>
-    <text x="638" y="255" class="rate-text-activation">활성화 ${data.활성화율}%</text>
+    <!-- 활성화율 박스 - 높이 기준 3: y=215 -->
+    <rect x="588" y="215" width="100" height="28" class="rate-box rate-box-activation"/>
+    <text x="638" y="233" class="rate-text-activation">활성화 ${data.활성화율}%</text>
     
     <!-- 관심 고객 (핵심 노드) - 신규고객과 x축 정렬 -->
-    <rect x="675" y="270" width="150" height="90" class="node-box-highlight"/>
-    <text x="750" y="295" class="node-text-title">관심 고객</text>
-    <text x="750" y="325" class="node-text-value">${data.관심고객}명</text>
-    ${renderComparison('관심고객', 750, 348)}
+    <rect x="675" y="250" width="150" height="90" class="node-box-highlight"/>
+    <text x="750" y="275" class="node-text-title">관심 고객</text>
+    <text x="750" y="305" class="node-text-value">${data.관심고객}명</text>
+    ${renderComparison('관심고객', 750, 328)}
     
     <!-- 역방향 화살표: 관심 고객 → 솔루션 (유지) - 아래쪽 -->
-    <path d="M 675 340 Q 637 355 600 340" class="arrow-return"/>
-    <text x="637" y="372" class="rate-label" style="fill: #6c757d;">유지</text>
+    <path d="M 675 320 Q 637 335 600 320" class="arrow-return"/>
+    <text x="637" y="352" class="rate-label" style="fill: #6c757d;">유지</text>
     
     <!-- 피드백 루프들 (부드러운 직각 화살표) - 높이 기준 2: y=160 -->
     
     <!-- 솔루션 → 이탈 (이탈 박스를 통과) -->
-    <path d="M 495 285 L 495 172 L 320 172 L 320 120" class="arrow-feedback arrow-churn"/>
+    <path d="M 495 265 L 495 172 L 320 172 L 320 120" class="arrow-feedback arrow-churn"/>
     <!-- 이탈율 박스 - 화살표가 통과 -->
-    <rect x="350" y="160" width="80" height="24" class="rate-box rate-box-churn"/>
-    <text x="390" y="175" class="rate-text-churn">이탈 ${data.이탈율}%</text>
+    <rect x="350" y="159" width="80" height="28" class="rate-box rate-box-churn"/>
+    <text x="390" y="177" class="rate-text-churn">이탈 ${data.이탈율}%</text>
     
     <!-- 솔루션 → 추천 (수직 화살표) -->
-    <path d="M 535 285 L 535 120" class="arrow-feedback arrow-referral"/>
+    <path d="M 535 265 L 535 120" class="arrow-feedback arrow-referral"/>
     <!-- 추천율 박스 -->
-    <rect x="495" y="160" width="80" height="24" class="rate-box rate-box-referral"/>
-    <text x="535" y="175" class="rate-text-referral">추천 ${data.추천율}%</text>
+    <rect x="495" y="159" width="80" height="28" class="rate-box rate-box-referral"/>
+    <text x="535" y="177" class="rate-text-referral">추천 ${data.추천율}%</text>
     
     <!-- 관심 고객 → 신규 고객 (수직 화살표) -->
-    <path d="M 750 270 L 750 120" class="arrow-feedback arrow-conversion"/>
+    <path d="M 750 250 L 750 120" class="arrow-feedback arrow-conversion"/>
     <!-- 전환율 박스 -->
-    <rect x="710" y="160" width="80" height="24" class="rate-box rate-box-conversion"/>
-    <text x="750" y="175" class="rate-text-conversion">전환 ${data.전환율}%</text>
+    <rect x="710" y="159" width="80" height="28" class="rate-box rate-box-conversion"/>
+    <text x="750" y="177" class="rate-text-conversion">전환 ${data.전환율}%</text>
 </svg>
             `;
             
