@@ -104,6 +104,13 @@
             stroke-width: 3;
         }
 
+        .node-box-h5 {
+            fill: #f8f9fa;
+            stroke: #adb5bd;
+            stroke-width: 2;
+            rx: 15;
+        }
+
         .node-text-title {
             font-size: 16px;
             font-weight: 600;
@@ -115,6 +122,20 @@
             font-size: 18px;
             font-weight: 700;
             fill: #212529;
+            text-anchor: middle;
+        }
+
+        .node-text-title-h5 {
+            font-size: 14px;
+            font-weight: 600;
+            fill: #6c757d;
+            text-anchor: middle;
+        }
+
+        .node-text-value-h5 {
+            font-size: 16px;
+            font-weight: 700;
+            fill: #495057;
             text-anchor: middle;
         }
 
@@ -171,6 +192,20 @@
             stroke-width: 2;
             fill: none;
             marker-end: url(#arrowhead);
+        }
+
+        .arrow-h5 {
+            stroke: #adb5bd;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead-h5);
+        }
+
+        .arrow-h5-up {
+            stroke: #adb5bd;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead-h5);
         }
 
         .arrow-label {
@@ -290,12 +325,58 @@
             추천율: '-',
             전환율: '-',
             확보율: '-',
-            활성화율: '-'
+            활성화율: '-',
+            플레이: '-',
+            포스트: '-',
+            캠페인: '-',
+            플레이전환율: '-',
+            포스트전환율: '-',
+            캠페인전환율: '-'
         };
+
+        // URL 파라미터에서 날짜 가져오기
+        function getDateFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dateParam = urlParams.get('date');
+            console.log('📅 URL 파라미터 날짜:', dateParam);
+            return dateParam;
+        }
+
+        // 날짜로 데이터 행 찾기
+        function findRowByDate(data, targetDate) {
+            if (!targetDate || !data.values || data.values.length < 2) {
+                return null;
+            }
+
+            const headers = data.values[0];
+            const dateIndex = headers.indexOf('날짜');
+            
+            if (dateIndex === -1) {
+                console.log('⚠️ 날짜 컬럼을 찾을 수 없습니다');
+                return null;
+            }
+
+            // 1번 인덱스부터 검색 (헤더 제외)
+            for (let i = 1; i < data.values.length; i++) {
+                const row = data.values[i];
+                const rowDate = row[dateIndex];
+                
+                if (rowDate === targetDate) {
+                    console.log(`✅ 날짜 "${targetDate}" 발견: 행 ${i + 1}`);
+                    return {
+                        currentIndex: i,
+                        previousIndex: i + 1 < data.values.length ? i + 1 : null
+                    };
+                }
+            }
+
+            console.log(`⚠️ 날짜 "${targetDate}"를 찾을 수 없습니다`);
+            return null;
+        }
 
         async function loadFromSheets() {
             try {
-                const range = `${SHEET_NAME}!A:L`;
+                const range = `${SHEET_NAME}!A:O`;
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
                 
                 console.log('📡 API 요청:', url);
@@ -315,11 +396,29 @@
 
                 const headers = data.values[0];
                 
-                // 현재 데이터 (2번째 행, index 1)
-                const currentRow = data.values[1];
+                // URL 파라미터에서 날짜 확인
+                const targetDate = getDateFromURL();
+                let currentRowIndex = 1;
+                let previousRowIndex = 2;
+
+                if (targetDate) {
+                    const foundIndices = findRowByDate(data, targetDate);
+                    if (foundIndices) {
+                        currentRowIndex = foundIndices.currentIndex;
+                        previousRowIndex = foundIndices.previousIndex;
+                    } else {
+                        // 날짜를 찾지 못하면 기본값(최신 데이터) 사용
+                        console.log('⚠️ 지정된 날짜를 찾지 못해 최신 데이터를 사용합니다');
+                    }
+                }
                 
-                // 이전 데이터 (3번째 행, index 2) - 있으면 가져오기
-                const previousRow = data.values.length > 2 ? data.values[2] : null;
+                // 현재 데이터
+                const currentRow = data.values[currentRowIndex];
+                
+                // 이전 데이터 (있으면 가져오기)
+                const previousRow = previousRowIndex && data.values.length > previousRowIndex 
+                    ? data.values[previousRowIndex] 
+                    : null;
                 
                 console.log('📋 헤더:', headers);
                 console.log('📊 현재 데이터:', currentRow);
@@ -353,6 +452,9 @@
                 const 방문자 = parseInt(currentData['방문자']) || 0;
                 const 잠재고객 = parseInt(currentData['잠재고객']) || 0;
                 const 관심고객 = parseInt(currentData['관심고객']) || 0;
+                const 플레이 = parseInt(currentData['플레이']) || 0;
+                const 포스트 = parseInt(currentData['포스트']) || 0;
+                const 캠페인 = parseInt(currentData['캠페인']) || 0;
                 
                 // 이전 값들 추출 (있는 경우)
                 let comparison = null;
@@ -365,6 +467,9 @@
                     const 이전_방문자 = parseInt(previousData['방문자']) || 0;
                     const 이전_잠재고객 = parseInt(previousData['잠재고객']) || 0;
                     const 이전_관심고객 = parseInt(previousData['관심고객']) || 0;
+                    const 이전_플레이 = parseInt(previousData['플레이']) || 0;
+                    const 이전_포스트 = parseInt(previousData['포스트']) || 0;
+                    const 이전_캠페인 = parseInt(previousData['캠페인']) || 0;
                     
                     comparison = {
                         누적고객: calculateChange(누적고객, 이전_누적고객),
@@ -374,7 +479,10 @@
                         활성고객: calculateChange(활성고객, 이전_활성고객),
                         방문자: calculateChange(방문자, 이전_방문자),
                         잠재고객: calculateChange(잠재고객, 이전_잠재고객),
-                        관심고객: calculateChange(관심고객, 이전_관심고객)
+                        관심고객: calculateChange(관심고객, 이전_관심고객),
+                        플레이: calculateChange(플레이, 이전_플레이),
+                        포스트: calculateChange(포스트, 이전_포스트),
+                        캠페인: calculateChange(캠페인, 이전_캠페인)
                     };
                     
                     console.log('📈 변화량 계산:', comparison);
@@ -390,8 +498,13 @@
                 const 전환율 = 관심고객 > 0 ? ((신규고객 / 관심고객) * 100).toFixed(0) : '0';
                 const 확보율 = 방문자 > 0 ? ((잠재고객 / 방문자) * 100).toFixed(0) : '0';
                 const 활성화율 = 잠재고객 > 0 ? ((관심고객 / 잠재고객) * 100).toFixed(0) : '0';
+                
+                // h5 전환율 계산
+                const 플레이전환율 = 잠재고객 > 0 ? ((플레이 / 잠재고객) * 100).toFixed(1) : '0.0';
+                const 포스트전환율 = 플레이 > 0 ? ((포스트 / 플레이) * 100).toFixed(1) : '0.0';
+                const 캠페인전환율 = 포스트 > 0 ? ((캠페인 / 포스트) * 100).toFixed(1) : '0.0';
 
-                console.log('📈 계산된 비율:', { 이탈율, 추천율, 전환율, 확보율, 활성화율 });
+                console.log('📈 계산된 비율:', { 이탈율, 추천율, 전환율, 확보율, 활성화율, 플레이전환율, 포스트전환율, 캠페인전환율 });
 
                 const displayData = {
                     누적고객: 누적고객.toLocaleString(),
@@ -402,11 +515,17 @@
                     방문자: 방문자.toLocaleString(),
                     잠재고객: 잠재고객.toLocaleString(),
                     관심고객: 관심고객.toLocaleString(),
+                    플레이: 플레이.toLocaleString(),
+                    포스트: 포스트.toLocaleString(),
+                    캠페인: 캠페인.toLocaleString(),
                     이탈율,
                     추천율,
                     전환율,
                     확보율,
                     활성화율,
+                    플레이전환율,
+                    포스트전환율,
+                    캠페인전환율,
                     comparison
                 };
 
@@ -453,6 +572,17 @@
             return `<text x="${x}" y="${y}" class="comparison-text ${className}">${arrow} ${sign}${comp.change} (${sign}${comp.percentage}%)</text>`;
         }
 
+        function renderComparisonSmall(key, x, y) {
+            const comp = window.currentComparison?.[key];
+            if (!comp) return '';
+            
+            const arrow = comp.isIncrease ? '▲' : '▼';
+            const className = comp.isIncrease ? 'comparison-increase' : 'comparison-decrease';
+            const sign = comp.isIncrease ? '+' : '';
+            
+            return `<text x="${x}" y="${y}" class="comparison-text ${className}" style="font-size: 13px;">${arrow} ${sign}${comp.change} (${sign}${comp.percentage}%)</text>`;
+        }
+
         function drawDiagram(data) {
             console.log('🎨 다이어그램 그리기 시작:', data);
             
@@ -462,7 +592,7 @@
             const container = document.getElementById('diagram-container');
             
             const svg = `
-<svg viewBox="0 0 1070 360" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+<svg viewBox="0 0 1070 470" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
     <defs>
         <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
             <polygon points="0 0, 10 3, 0 6" fill="#6c757d" />
@@ -478,6 +608,9 @@
         </marker>
         <marker id="arrowhead-conversion" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
             <polygon points="0 0, 10 3, 0 6" fill="#14a085" />
+        </marker>
+        <marker id="arrowhead-h5" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <polygon points="0 0, 10 3, 0 6" fill="#adb5bd" />
         </marker>
     </defs>
     
@@ -594,6 +727,40 @@
     <!-- 전환율 박스 -->
     <rect x="710" y="159" width="80" height="28" class="rate-box rate-box-conversion"/>
     <text x="750" y="177" class="rate-text-conversion">전환 ${data.전환율}%</text>
+
+    <!-- ========== h5 레벨 노드들 (y=390) ========== -->
+    
+    <!-- 플레이 노드 - 잠재고객 x축 (중심 320) -->
+    <rect x="255" y="390" width="130" height="70" class="node-box-h5"/>
+    <text x="320" y="415" class="node-text-title-h5">플레이</text>
+    <text x="320" y="440" class="node-text-value-h5">${data.플레이}회</text>
+    ${renderComparisonSmall('플레이', 320, 455)}
+    
+    <!-- 포스트 노드 - 솔루션 x축 (중심 535) -->
+    <rect x="470" y="390" width="130" height="70" class="node-box-h5"/>
+    <text x="535" y="415" class="node-text-title-h5">포스트</text>
+    <text x="535" y="440" class="node-text-value-h5">${data.포스트}개</text>
+    ${renderComparisonSmall('포스트', 535, 455)}
+    
+    <!-- 캠페인 노드 - 관심고객 x축 (중심 750) -->
+    <rect x="685" y="390" width="130" height="70" class="node-box-h5"/>
+    <text x="750" y="415" class="node-text-title-h5">캠페인</text>
+    <text x="750" y="440" class="node-text-value-h5">${data.캠페인}회</text>
+    ${renderComparisonSmall('캠페인', 750, 455)}
+    
+    <!-- h5 화살표들: 솔루션 → 플레이 → 포스트 → 캠페인 -->
+    
+    <!-- 솔루션 → 플레이 (솔루션 아래에서 플레이로) -->
+    <path d="M 495 325 L 495 365 L 320 365 L 320 390" class="arrow-h5"/>
+    <text x="407" y="358" class="rate-label" style="font-size: 13px; fill: #6c757d;">${data.플레이전환율}%</text>
+    
+    <!-- 플레이 → 포스트 -->
+    <line x1="385" y1="425" x2="470" y2="425" class="arrow-h5"/>
+    <text x="427" y="418" class="rate-label" style="font-size: 13px; fill: #6c757d;">${data.포스트전환율}%</text>
+    
+    <!-- 포스트 → 캠페인 -->
+    <line x1="600" y1="425" x2="685" y2="425" class="arrow-h5"/>
+    <text x="642" y="418" class="rate-label" style="font-size: 13px; fill: #6c757d;">${data.캠페인전환율}%</text>
 </svg>
             `;
             
